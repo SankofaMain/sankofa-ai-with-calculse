@@ -1,0 +1,40 @@
+import numpy as np
+import pandas as pd
+from sklearn.datasets import fetch_california_housing
+
+houses = fetch_california_housing()
+X = houses.data
+X_mean = np.mean(X, axis=0)
+X_std = np.std(X, axis=0)
+X_scaled = (X - X_mean) / X_std 
+data_train = X_scaled[: -700]
+data_test = X_scaled[-700 : ]
+
+target_train = houses.target[: -700].reshape(-1, 1)
+target_test = houses.target[-700 : ].reshape(-1, 1)
+
+widths = np.zeros(shape=(8 , 1))
+bias = 0
+
+def jac(data=data_train, target=target_train, widths=widths, bias=bias, alpha=0.1, train_time=10000):
+    m = len(data)
+    for _ in range(train_time):
+        error = (np.dot(data, widths) + bias) - target
+        grad_w = np.dot(data.T, error) / m
+        grad_b = np.sum(error) / m
+        
+        widths -= alpha * grad_w
+        bias -= alpha * grad_b
+        print(widths , bias) # تقدر انك تغير وتحذف هذا السطر لو تبيه يكون اسرع
+        
+    return widths, bias
+
+def loss(widths, bias, data=data_train, target=target_train):
+    prediction = np.dot(data, widths) + bias
+    return np.mean((prediction - target)**2)
+
+widths, bias = jac()
+
+print(f'widths : \n{pd.DataFrame(widths)} , bias : \n{bias}')
+rmse = np.sqrt(loss(widths, bias, data_test, target_test))
+print(f"loss is { (rmse / np.mean(target_test)) * 100:.2f}%")
